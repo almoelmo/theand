@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <meta charset="UTF-8">
+    <title>USERS CRUD</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+          integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://yastatic.net/jquery/3.3.1/jquery.js"></script>
+    <script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+            integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+            crossorigin="anonymous"></script>
+    <style>
+        .custom-navbar {
+            margin-bottom: 20px;
+            background-color: #31373e;
+            height: 45px;
+        }
+
+        .custom-navbar a {
+            color: #82888b;
+        }
+
+        .custom-navbar a:hover {
+            color: #babcbe;
+            text-decoration: none;
+        }
+
+        .email {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .role {
+            color: #fff;
+            font-size: 18px;
+        }
+
+        .padding-left-zero {
+            padding-left: 0;
+        }
+
+        .padding-left-zero a {
+            height: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-default custom-navbar padding-left-zero">
+    <div class="container-fluid">
+        <ul class="nav list-group list-group-horizontal" id="siteHeader">
+            <li><p th:text="${'Ваш Email: '+ authUser.email + ' | '}" class='email'></p></li>
+            <li><p th:text="${'| Ваши роли: '+ authUser.role}" class='role'></p></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
+</nav>
+<div class="container-fluid">
+    <div class="row">
+        <!--    Начало навигационной панели слева     -->
+        <div class="col-2 padding-left-zero">
+            <div class="nav nav-pills flex-column" id="roleNavBtn" role="tablist">
+                <a th:if="${authUser.role.contains(adminRole)}" class='block nav-link' data-toggle='pill' href='#adminPanel'>
+                    <p class='text-left text-capitalize'>ADMIN</p>
+                </a>
+                <a th:if="${authUser.role.contains(userRole)}" class='block nav-link' data-toggle='pill' href='#userPanel'>
+                    <p class='text-left text-capitalize'>USER</p>
+                </a>
+                <a class='block nav-link active' data-toggle='pill' href='#postPanel'>
+                    <p class='text-left text-capitalize'>All posts</p>
+                </a>
+            </div>
+        </div>
+        <!--    Конец левой навигационной панели    -->
+        <div class="col-10">
+            <div class="tab-content">
+                <div class="tab-pane" id="adminPanel">
+                    <h1>Admin panel</h1>
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li><a class="nav-link active" data-toggle="tab" href="#table-users">All Users</a></li>
+                        <li><a class="nav-link" data-toggle="tab" href="#add">Add User</a></li>
+                        <li><a class="nav-link" data-toggle="tab" href="#edit">Edit User</a></li>
+                        <li><a class="nav-link" data-toggle="tab" href="#table-posts">All Posts</a></li>
+                    </ul>
+                    <div class="tab-content container-fluid">
+                        <div role="tabpanel" class="tab-pane active" id="table-users">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Age</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Roles</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                                </thead>
+                                <tbody id="usersTableHere">
+                                <th:block th:each="user : ${users}" >
+                                    <tr>
+                                        <td th:text="${user.id}"></td>
+                                        <td th:text="${user.name}"></td>
+                                        <td th:text="${user.age}"></td>
+                                        <td th:text="${user.email}"></td>
+                                        <td th:text="${user.role}"></td>
+                                        <td>
+                                            <form th:action="'/users/'+ ${user.id} +'/delete'" method="POST">
+                                                <button id='deleteUser' th:disabled="${authUser.id == user.id}" type='submit' class='btn btn-danger btn-sm'>Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </th:block>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="table-posts">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Title</th>
+                                    <th scope="col">Created</th>
+                                    <th scope="col">Author</th>
+                                    <th scope="col">Content</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                                </thead>
+                                <tbody id="postsTableHere">
+                                <th:block th:each="post : ${allPosts}" >
+                                    <tr>
+                                        <td th:text="${post.id}"></td>
+                                        <td th:text="${post.title}"></td>
+                                        <td th:text="${post.createdOn}"></td>
+                                        <td th:text="${post.user.getEmail()}"></td>
+                                        <td th:text="${post.content}"></td>
+                                        <td>
+                                            <form th:action="'/posts/'+ ${post.id} +'/delete'" method="POST">
+                                            <button id='deletePost' type='submit' class='btn btn-danger btn-sm'>Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </th:block>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="add">
+                            <form  th:action="'/users/new'" th:object="${user}" method="POST">
+                            <div id="dropEmptyUser" class="col-3 offset-4">
+                                <div class='form-group text-center'> 
+                                <label><b>Name</b></label> 
+                                <input id='newName' type='text' th:field="*{name}" class='form-control' placeholder='Name' required='required'>
+                                </div> 
+                                <div class='form-group text-center'> 
+                                <label><b>Age</b></label> 
+                                <input id='age' type='number' th:field="*{age}" class='form-control' placeholder='Age' required='required'>
+                                </div> 
+                                <div class='form-group text-center'> 
+                                <label><b>Email</b></label> 
+                                <input id='newEmail' type='email' th:field="*{email}" class='form-control' placeholder='Email' required='required'>
+                                </div> 
+                                <div class='form-group text-center'> 
+                                <label><b>Password</b></label> 
+                                <input id='newPassword' type='password' th:field="*{password}" class='form-control' placeholder='Password' required='required'>
+                                </div>
+                                <div class='form-group text-center'> 
+                                <label><b>Role</b></label> 
+                                <div>
+                                    <th:block th:each="rol : ${roles}" >
+                                        <label th:for="${rol.name()}" th:text="${rol.name()}"></label>
+                                        <input th:type="checkbox" th:field="*{role}" th:value="${rol.name()}" th:attr="id=${'New_'+rol.name()}" readonly='readonly'> </label>
+                                    </th:block>
+                                </div>
+                                </div>
+                                <button id='createUser' type='submit' class='btn btn-success btn-lg'>Add new User</button>
+                                <div class="form-group text-center">
+                                </div>
+                            </div>
+                            </form>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="edit">
+                            <form  th:action="'/users/edit'" th:object="${user}" method="POST">
+                                <div id="dropEmptyUserEdit" class="col-3 offset-4">
+                                    <div class='form-group text-center'>
+                                        <label><b>Select user which need to edit</b></label>
+                                        <select th:field="*{id}">
+                                            <option th:each="p : ${users}" th:value="${p.id}" th:text="${p.id}">
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class='form-group text-center'>
+                                        <label><b>Name</b></label>
+                                        <input id='newNameEdit' type='text' th:field="*{name}" class='form-control' placeholder='Name'>
+                                    </div>
+                                    <div class='form-group text-center'>
+                                        <label><b>Age</b></label>
+                                        <input id='ageEdit' type='number' th:field="*{age}" class='form-control' placeholder='Age'>
+                                    </div>
+                                    <div class='form-group text-center'>
+                                        <label><b>Email</b></label>
+                                        <input id='newEmailEdit' type='email' th:field="*{email}" class='form-control' placeholder='Email'>
+                                    </div>
+                                    <div class='form-group text-center'>
+                                        <label><b>Password</b></label>
+                                        <input id='newPasswordEdit' type='password' th:field="*{password}" class='form-control' placeholder='Password'>
+                                    </div>
+                                    <div class='form-group text-center'>
+                                        <label><b>Role</b></label>
+                                        <div>
+                                            <th:block th:each="rol : ${roles}" >
+                                                <label th:for="${rol.name()}" th:text="${rol.name()}"></label>
+                                                <input th:type="checkbox" th:field="*{role}" th:value="${rol.name()}" th:attr="id=${'New_'+rol.name()}" readonly='readonly'> </label>
+                                            </th:block>
+                                        </div>
+                                    </div>
+                                    <div class="form-group text-center">
+                                        <button id='updateUser' type='submit' class='btn btn-warning btn-lg'>Update User</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="userPanel">
+                    <h1>User panel</h1>
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li><a class="nav-link active" data-toggle="tab" href="#user-info">User</a></li>
+                        <li><a class="nav-link" data-toggle="tab" href="#postadd">Add Post</a></li>
+                        <li><a class="nav-link" data-toggle="tab" href="#postedit">Edit Posts</a></li>
+                        <li><a class="nav-link" data-toggle="tab" href="#user-posts">User Posts</a></li>
+                    </ul>
+                    <div class="tab-content container-fluid">
+                        <div role="tabpanel" class="tab-pane active" id="user-info">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Age</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Roles</th>
+                            </tr>
+                            </thead>
+                            <tbody id="usersData">
+                                <tr>
+                                    <td th:text="${authUser.id}"></td>
+                                    <td th:text="${authUser.name}"></td>
+                                    <td th:text="${authUser.age}"></td>
+                                    <td th:text="${authUser.email}"></td>
+                                    <td th:text="${authUser.role}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="postadd">
+                        <form  th:action="'/posts/new'" th:object="${post}" method="POST">
+                            <div id="dropEmptyPost" class="col-3 offset-4">
+                                <div class='form-group text-center'>
+                                    <label><b>Title</b></label>
+                                    <input id='newTitle' type='text' th:field="*{title}" class='form-control' placeholder='Title' required='required'>
+                                </div>
+                                <div class='form-group text-center'>
+                                    <label><b>Content</b></label>
+                                   <textarea id='newContentArea' type='text' th:field="*{content}" class='form-control' placeholder='Content' required='required'>
+                                </textarea>
+                                </div>
+                                <div class='form-group text-center'>
+                                    <button id='createPost' type='submit' class='btn btn-success btn-lg'>Add new Post</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                        <div role="tabpanel" class="tab-pane" id="postedit">
+                            <form  th:action="'/posts/edit'" th:object="${post}" method="POST">
+                                <div id="dropEmptyPostEdit" class="col-3 offset-4">
+                                    <div class='form-group text-center'>
+                                        <label><b>Mark post which need to edit</b></label>
+                                        <select th:field="*{id}">
+                                            <option th:each="p : ${posts}" th:value="${p.id}" th:text="${p.id}">
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <div class='form-group text-center'>
+                                        <label><b>Title</b></label>
+                                        <input id='newTitleEdit' type='text' th:field="*{title}" class='form-control' placeholder='Title' required='required'>
+                                    </div>
+                                    <div class='form-group text-center'>
+                                        <label><b>Content</b></label>
+                                        <textarea id='newContentAreaEdit' type='text' th:field="*{content}" class='form-control' placeholder='Content' required='required'>
+                                        </textarea>
+                                    </div>
+                                    <div class='form-group text-center'>
+                                        <button id='updatePost' type='submit' class='btn btn-warning btn-lg'>Edit Post</button>
+                                    </div>
+                                </div>
+                            </form>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="user-posts">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th scope="col">Id</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Created</th>
+                                <th scope="col">Content</th>
+                                <th scope="col">Delete</th>
+                            </tr>
+                            </thead>
+                            <tbody id="userPosts">
+                            <th:block th:each="post : ${posts}" >
+                                <tr>
+                                    <td th:text="${post.id}"></td>
+                                    <td th:text="${post.title}"></td>
+                                    <td th:text="${post.createdOn}"></td>
+                                    <td th:text="${post.content}"></td>
+                                    <td>
+                                        <form th:action="'/posts/'+ ${post.id} +'/delete'" method="POST">
+                                            <button id='deletePostFromUser' type='submit' class='btn btn-danger btn-sm'>Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </th:block>
+                            </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
+                <div class="tab-pane active" id="postPanel">
+                    <h1>All posts</h1>
+                    <br>
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Created</th>
+                                <th scope="col">Content</th>
+                                <th scope="col">User</th>
+                            </tr>
+                            </thead>
+                            <tbody id="allPosts">
+                            <th:block th:each="post : ${allPosts}" >
+                                <tr>
+                                    <td th:text="${post.id}"></td>
+                                    <td th:text="${post.title}"></td>
+                                    <td th:text="${post.createdOn}"></td>
+                                    <td th:text="${post.content}"></td>
+                                    <td th:text="${post.user.email}"></td>
+                                </tr>
+                            </th:block>
+                            </tbody>
+                        </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
